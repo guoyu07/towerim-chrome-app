@@ -8,5 +8,9 @@
         }
     },
     "icons": { "16": "calculator-16.png", "128": "calculator-128.png" },
-    "permissions": [ "http://*.tower.im/*", "https://*.tower.im/*", "app.window", "notifications", "storage", "identity" ]
+    "permissions": [
+        "http://*.tower.im/*", "https://*.tower.im/*",
+        "https://towerfiles.oss.aliyuncs.com/*",
+        "app.window", "notifications", "storage", "webview"
+    ]
 }

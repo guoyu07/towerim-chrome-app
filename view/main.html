@@ -1,11 +1,44 @@
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="lib/jquery.js"></script>
-      <script src="lib/underscore.js"></script>
-      <script src="js/main.js"></script>>
+      <meta charset="UTF-8" />
+      <link href="/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+      <link href="/css/main.css" rel="stylesheet">
   </head>
   <body>
-    <div></div>
+
+    <ul class="list-group" data-bind="foreach: { data: tasks, as: 'task' }">
+        <li class="list-group-item">
+            <div>
+                <img class="avatar" src=""
+                     data-bind="attr:{data-src: 'https://towerfiles.oss.aliyuncs.com/avatar/' + $root.user.avatar},
+                                visible: task.running" >
+                <span class="label label-danger" data-bind="visible: task.emergency">high</span>
+                <span class="label label-primary" data-bind="visible: task.due, text: task.due"></span>
+                <span data-bind="html: task.title"></span>
+                <div class="btn-group btn-group-xs edit-bar" style="float:right">
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.toggleTask"><span class="glyphicon glyphicon-play"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.editTask"><span class="glyphicon glyphicon-pencil"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.deleteTask"><span class="glyphicon glyphicon-trash"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.openTaskUrl"><span class="glyphicon glyphicon-share-alt"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.finishTask"><span class="glyphicon glyphicon-ok"></span></button>
+                </div>
+            </div>
+        </li>
+    </ul>
+
+
+
+
+
+
+    <script src="/lib/jquery.js"></script>
+    <script src="/lib/underscore.js"></script>
+    <script src="/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/lib/knockout.js"></script>
+    <script src="/lib/knockout-secure-binding.js"></script>
+    <script src="/lib/app-resource-loader.js"></script>
+    <script src="/js/util.js"></script>
+    <script src="/js/main.js"></script>
   </body>
 </html>
