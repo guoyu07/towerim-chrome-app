@@ -1,7 +1,7 @@
 $(document).ready(function () {
 
 var Task = function(data) {
-    this.title = data.content;
+    this.title = data["content_without_gtd_marks"];
     this.emergency = !_.isEmpty(data["priority_marks"]);
     this.running = ko.observable(data.status == "1");
     this.guid = data.guid;
@@ -12,8 +12,8 @@ var Task = function(data) {
     }
 }
 
-function updateTask(task, attr, status, token) {
-    var data = {};
+function toggleTaskStatus(task, attr, token, showStatus) {
+    var data = {}, status = task[attr]();
     data[attr] = status ? 0 : 1;
     $.ajax({
         "url": "https://tower.im/api/v2/todos/" + task.guid + "/?token=" + token,
@@ -22,7 +22,7 @@ function updateTask(task, attr, status, token) {
         "success": function(res) {
             if (res.success) {
                 task[attr](!status);
-                showStatusText(true, "edit task successfully");
+                if (showStatus) showStatusText(true, "edit task successfully");
             }
         },
         error: function() {
@@ -33,7 +33,7 @@ function updateTask(task, attr, status, token) {
 
 function loadRemoteImage() {
     $("img[data-bind]").each(function() {
-        var remoteImg = new RAL.RemoteImage({element: this, width: 20, height: 20});
+        var remoteImg = new RAL.RemoteImage({element: this, width: 24, height: 24});
         RAL.Queue.add(remoteImg);
     });
     RAL.Queue.setMaxConnections(4);
@@ -46,18 +46,42 @@ function showStatusText(status, text) {
     $("#statusbar").stop(false, true).addClass(className).text(text).fadeIn().delay(2500).fadeOut();
 }
 
+
+ko.bindingHandlers.visible = {
+    init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        var value = ko.utils.unwrapObservable(valueAccessor());
+        var $element = $(element);
+        if (value)
+            $element.show();
+        else
+            $element.hide();
+    },
+    update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        var value = ko.utils.unwrapObservable(valueAccessor());
+        var $element = $(element);
+        var allBindings = allBindingsAccessor();
+        // Grab data from binding property
+        var duration = allBindings.duration || 250;
+        var isCurrentlyVisible = !(element.style.display == "none");
+        if (value && !isCurrentlyVisible)
+            $element.show(duration);
+        else if ((!value) && isCurrentlyVisible)
+            $element.hide(duration);
+    }
+};
+
 chrome.storage.sync.get("user", function(data) {
     var user = data.user, token = user["access_token"];
     function refreshTasks(callback) {
         $.ajax(
-            "https://tower.im/api/v2/members/7c93bc8f591045f3b60eb8c9b073d9da/todos", {
+            "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos", {
                 data: { "token": token },
                 success: function(data) {
                     callback(data);
-                    showStatusText(true, "refresh task list successfully.");
+                    showStatusText(true, "refresh task list successfully");
                 },
                 error: function() {
-                    showStatusText(false, "refresh task list failed.");
+                    showStatusText(false, "refresh task list failed");
                 }
             }
         );
@@ -69,17 +93,33 @@ chrome.storage.sync.get("user", function(data) {
             user: user,
             tasks: ko.observableArray(_.map(data, function(task) { return new Task(task); })),
             toggleTask: function() {
-                updateTask(this, "running", this.running(), token);
-                console.log(this);
+                toggleTaskStatus(this, "running", token);
+                // 开始一个任务 需要暂停其他开始的任务
+                if (this.running()) return;
+                _.each(viewModel.tasks(), function(otherTask) {
+                    if (otherTask != this && otherTask.running()) {
+                        toggleTaskStatus(otherTask, "running", token, false);
+                    }
+                });
             },
             editTask: function() {
                 console.log(this);
             },
             deleteTask: function() {
-                console.log(this);
+                $.ajax(
+                    "https://tower.im/api/v2/todos/" + this.guid + "/?token=" + token, {
+                        method: "DELETE",
+                        success: function() {
+                            showStatusText(true, "delete task successfully");
+                        },
+                        error: function() {
+                            showStatusText(false, "delete task failed");
+                        }
+                    }
+                );
             },
             finishTask: function() {
-                updateTask(this, "completed", this.completed(), token);
+                toggleTaskStatus(this, "completed", token);
             },
             openTaskUrl: function() {
                 openUrl("https://tower.im/projects/" + this.project.guid + "/todos/" + this.guid + "/");

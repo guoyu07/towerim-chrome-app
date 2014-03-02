@@ -8,7 +8,7 @@
   <body>
 
     <ul class="list-group" data-bind="foreach: { data: tasks, as: 'task' }">
-        <li class="list-group-item" data-bind="css: { list-group-item-success: task.completed() }">
+        <li class="list-group-item task" data-bind="css: { list-group-item-success: task.completed() }">
             <div>
                 <img class="avatar" src=""
                      data-bind="attr:{data-src: 'https://towerfiles.oss.aliyuncs.com/avatar/' + $root.user.avatar},
@@ -16,7 +16,7 @@
                 <span class="label label-danger" data-bind="visible: task.emergency">high</span>
                 <span class="label label-primary" data-bind="visible: task.due, text: task.due"></span>
                 <span data-bind="html: task.title"></span>
-                <div class="btn-group btn-group-xs edit-bar" style="float:right">
+                <div class="btn-group btn-group-xs edit-bar">
                     <button type="button" class="btn btn-default" data-bind="click: $parent.toggleTask">
                         <span class="glyphicon" data-bind="css: { glyphicon-pause: task.running(), glyphicon-play: !task.running() }"></span>
                     </button>

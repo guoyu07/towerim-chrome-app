@@ -1,13 +1,13 @@
 {
-    "name": "Hello World!",
-    "description": "My first Chrome App.",
+    "name": "Tower Climber",
+    "description": "A Tower.im client",
     "version": "0.1",
     "app": {
         "background": {
             "page": "background.html"
         }
     },
-    "icons": { "16": "calculator-16.png", "128": "calculator-128.png" },
+    "icons": { "16": "icon-16.png", "48": "icon-48.png", "128": "icon-128.png" },
     "permissions": [
         "http://*.tower.im/*", "https://*.tower.im/*",
         "https://towerfiles.oss.aliyuncs.com/*",

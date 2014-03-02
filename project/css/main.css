@@ -8,15 +8,24 @@ html, body {
     top: 2px;
 }
 
+.btn:hover {
+    color: #428bca;
+}
+
 .avatar {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
+    margin-top: -2px;
     border-radius: 50%;
     box-shadow: 0 2px 3px rgba(0,0,0,0.15);
 }
 
 .edit-bar {
     display: none;
+    position: absolute;
+    float: right;
+    right: 5px;
+    bottom: 5px;
 }
 
 .tower-toolbar {
@@ -38,4 +47,15 @@ html, body {
 
 .tower-toolbar span {
     font-size: 140%;
+}
+
+.task {
+    padding: 8px 15px 6px;
+}
+
+.task .label {
+    display: inline-block;
+    font-size: 90%;
+    padding-bottom: .2em;
+    margin-bottom: 2px;
 }

@@ -24,8 +24,8 @@
                 type: "POST",
                 dataType: "JSON",
                 success: function (data) {
-                    return chrome.storage.sync.set(data, function () {
-                        return openView("window", function () {
+                    return chrome.storage.sync.set({"user": data}, function () {
+                        return openView("main", function () {
                             return chrome.app.window.current().close()
                         })
                     })
