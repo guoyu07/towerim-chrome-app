@@ -32,6 +32,10 @@ function openUrl(url, callback) {
     }
 }
 
+function isString(obj) {
+    return typeof obj == 'string' || obj instanceof String;
+}
+
 function getUrlParam(key) {
     var result = new RegExp(key + "=([^&]*)", "i").exec(window.location.search);
     return result && decodeURIComponent(result[1]) || "";

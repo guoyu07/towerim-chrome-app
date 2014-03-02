@@ -23,7 +23,7 @@ var Task = function(data, localTasks) {
     syncTaskTimeRecorder(this);
 }
 
-function toggleTaskStatus(task, attr, token, showStatus) {
+function toggleTaskStatus(task, attr, token, showStatus, callback) {
     var data = {}, status = task[attr]();
     data[attr] = status ? 0 : 1;
     $.ajax({
@@ -36,6 +36,9 @@ function toggleTaskStatus(task, attr, token, showStatus) {
                 if (showStatus) showStatusText(true, "edit task successfully");
                 if (attr == "running") {
                     syncTaskTimeRecorder(task);
+                }
+                if (_.isFunction(callback)) {
+                    callback(task);
                 }
             }
         },
@@ -57,7 +60,7 @@ function syncTaskTimeRecorder(task) {
 
     clearInterval(task._timerId);
     delete task._timerId;
-    if (!task.running()) {
+    if (!task.running() || task.completed()) {
         saveUsedTime(task);
     } else {
         var counter = 0;
@@ -159,7 +162,13 @@ chrome.storage.sync.get(null, function(data) {
                 );
             },
             finishTask: function() {
-                toggleTaskStatus(this, "completed", token);
+                toggleTaskStatus(this, "completed", token, true, function(task) {
+                    if (task.completed()) {
+                        viewModel._submitComment(task, "任务完成，总共耗时：" + secondsToTimeInterval(task.usedSeconds), false);
+                        task.running(false);
+                        syncTaskTimeRecorder(task);
+                    }
+                });
             },
             openTaskUrl: function() {
                 openUrl("https://tower.im/projects/" + this.project.guid + "/todos/" + this.guid + "/");
@@ -183,27 +192,34 @@ chrome.storage.sync.get(null, function(data) {
                     viewModel._refreshComment(task);
                 }
             },
+            _submitComment: function(task, comment, byUser) {
+                $.ajax({
+                    "url": "https://tower.im/api/v2/todos/" + task.guid + "/comments",
+                    "type": "POST",
+                    "data": { "token": token, "content": comment },
+                    "success": function() {
+                        if (byUser) {
+                            showStatusText(true, "submit comment successfully");
+                            task.newComment("");
+                            task.commentSubmitting(false);
+                        }
+                        viewModel._refreshComment(task);
+                    },
+                    "error": function() {
+                        if (byUser) {
+                            task.commentSubmitting(false);
+                        }
+                        showStatusText(false, "submit comment failed");
+                    }
+                });
+            },
             addComment: function(task) {
                 if (!task.newComment()) {
                     showStatusText(false, "empty comment")
                     return;
                 }
                 task.commentSubmitting(true);
-                $.ajax({
-                    "url": "https://tower.im/api/v2/todos/" + this.guid + "/comments",
-                    "type": "POST",
-                    "data": { "token": token, "content": task.newComment() },
-                    "success": function(data) {
-                        showStatusText(true, "submit comment successfully");
-                        task.newComment("");
-                        task.commentSubmitting(false);
-                        viewModel._refreshComment(task);
-                    },
-                    "error": function() {
-                        task.commentSubmitting(false);
-                        showStatusText(false, "submit comment failed");
-                    }
-                });
+                viewModel._submitComment(task, task.newComment(), true);
             },
             refresh: function() {
                 var tasks = this.tasks;
