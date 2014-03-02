@@ -16,12 +16,30 @@
                 <span class="label label-danger" data-bind="visible: task.emergency">high</span>
                 <span class="label label-primary" data-bind="visible: task.due, text: task.due"></span>
                 <span data-bind="html: task.title"></span>
+
+                <!-- 任务评论 -->
+                <div id="task-detail" data-bind="visible: task.showComments()">
+                    <div class="input-group input-group-sm comment-input">
+                        <input type="text" class="form-control" placeholder="new comment here"
+                               data-bind="value: task.newComment, valueUpdate: 'input'">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="button"
+                                    data-bind="click: $parent.addComment, enable: !task.commentSubmitting()">Submit</button>
+                        </span>
+                    </div>
+                    <ul class="list-group comment-list" data-bind="foreach: { data: task.comments, as: 'comment' }">
+                        <li class="list-group-item" data-bind="html: comment.content"></li>
+                    </ul>
+                </div>
+
+                <!-- 任务操作工具栏 -->
                 <div class="btn-group btn-group-xs edit-bar">
                     <button type="button" class="btn btn-default" data-bind="click: $parent.toggleTask">
                         <span class="glyphicon" data-bind="css: { glyphicon-pause: task.running(), glyphicon-play: !task.running() }"></span>
                     </button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.editTask"><span class="glyphicon glyphicon-pencil"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.deleteTask"><span class="glyphicon glyphicon-trash"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.toggleComments"><span class="glyphicon glyphicon-comment"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.openTaskUrl"><span class="glyphicon glyphicon-share-alt"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.finishTask"><span class="glyphicon glyphicon-ok"></span></button>
                 </div>

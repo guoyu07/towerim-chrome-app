@@ -4,7 +4,7 @@ html, body {
     overflow-y: scroll;
 }
 
-.glyphicon {
+button .glyphicon {
     top: 2px;
 }
 
@@ -25,7 +25,7 @@ html, body {
     position: absolute;
     float: right;
     right: 5px;
-    bottom: 5px;
+    top: 6px;
 }
 
 .tower-toolbar {
@@ -58,4 +58,21 @@ html, body {
     font-size: 90%;
     padding-bottom: .2em;
     margin-bottom: 2px;
+}
+
+.comment-input {
+    margin-top: 5px;
+}
+
+#task-detail {
+    font-size: 70%;
+}
+
+.comment-list {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.comment-list li {
+    padding: 4px 10px;
 }

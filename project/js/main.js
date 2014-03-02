@@ -7,6 +7,10 @@ var Task = function(data) {
     this.guid = data.guid;
     this.project = data.project;
     this.completed = ko.observable(false);
+    this.showComments = ko.observable(false);
+    this.newComment = ko.observable("");
+    this.comments = ko.observableArray([]);
+    this.commentSubmitting = ko.observable(false);
     if (data["due_at"]) {
         this.due = calcDateDistance(new Date(data["due_at"]));
     }
@@ -17,7 +21,7 @@ function toggleTaskStatus(task, attr, token, showStatus) {
     data[attr] = status ? 0 : 1;
     $.ajax({
         "url": "https://tower.im/api/v2/todos/" + task.guid + "/?token=" + token,
-        "method": "PUT",
+        "type": "PUT",
         "data": data,
         "success": function(res) {
             if (res.success) {
@@ -108,11 +112,11 @@ chrome.storage.sync.get("user", function(data) {
             deleteTask: function() {
                 $.ajax(
                     "https://tower.im/api/v2/todos/" + this.guid + "/?token=" + token, {
-                        method: "DELETE",
-                        success: function() {
+                        "type": "DELETE",
+                        "success": function() {
                             showStatusText(true, "delete task successfully");
                         },
-                        error: function() {
+                        "error": function() {
                             showStatusText(false, "delete task failed");
                         }
                     }
@@ -123,6 +127,47 @@ chrome.storage.sync.get("user", function(data) {
             },
             openTaskUrl: function() {
                 openUrl("https://tower.im/projects/" + this.project.guid + "/todos/" + this.guid + "/");
+            },
+            _refreshComment: function(task) {
+                $.ajax({
+                    "url": "https://tower.im/api/v2/todos/" + task.guid + "/",
+                    "type": "GET",
+                    "data": { "token": token },
+                    "success": function(data) {
+                        task.comments.removeAll();
+                        _.each(data.comments.reverse(), function(comment) {
+                            task.comments.push(comment);
+                        });
+                    }
+                });
+            },
+            toggleComments: function(task) {
+                task.showComments(!task.showComments());
+                if (task.showComments()) {
+                    viewModel._refreshComment(task);
+                }
+            },
+            addComment: function(task) {
+                if (!task.newComment()) {
+                    showStatusText(false, "empty comment")
+                    return;
+                }
+                task.commentSubmitting(true);
+                $.ajax({
+                    "url": "https://tower.im/api/v2/todos/" + this.guid + "/comments",
+                    "type": "POST",
+                    "data": { "token": token, "content": task.newComment() },
+                    "success": function(data) {
+                        showStatusText(true, "submit comment successfully");
+                        task.newComment("");
+                        task.commentSubmitting(false);
+                        viewModel._refreshComment(task);
+                    },
+                    "error": function() {
+                        task.commentSubmitting(false);
+                        showStatusText(false, "submit comment failed");
+                    }
+                });
             },
             refresh: function() {
                 var tasks = this.tasks;
