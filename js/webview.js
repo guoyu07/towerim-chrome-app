@@ -1,3 +1,7 @@
 $(document).ready(function () {
-    $("#webview").attr("src", getUrlParam("url"));
+    changeUrl(getUrlParam("url"));
 });
+
+function changeUrl(url) {
+    $("#webview").attr("src", url);
+}

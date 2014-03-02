@@ -8,15 +8,28 @@ function openView(view, callback) {
     }, callback);
 }
 
+var webviewWindowId = "towerim-ex-webview-window";
 function openUrl(url, callback) {
     console.log("open url: " + url);
-    chrome.app.window.create("/view/webview.html?url=" + encodeURIComponent(url), {
-        'type': 'shell',
-        'bounds': {
-            'width': 1024,
-            'height': 800
-        }
-    }, callback);
+    var win = chrome.app.window.get(webviewWindowId)
+    if (win) {
+        win.contentWindow.changeUrl(url);
+        win.show();
+    } else {
+        chrome.app.window.create("/view/webview.html?url=" + encodeURIComponent(url), {
+            'id': webviewWindowId,
+            'type': 'shell',
+            'bounds': {
+                'width': 1024,
+                'height': 800
+            }
+        }, function(createdWindow) {
+            webviewWindowId = createdWindow.id;
+            if (_.isFunction(callback)) {
+                callback(createdWindow);
+            }
+        });
+    }
 }
 
 function getUrlParam(key) {
