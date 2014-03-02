@@ -1,4 +1,4 @@
-Tower-Climber
+Tower Climber
 =============
 
-A Tower.im Chrome App client
+A Tower.im Chrome App client.
