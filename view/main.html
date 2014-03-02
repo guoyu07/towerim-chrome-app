@@ -12,12 +12,14 @@
             <div>
                 <img class="avatar" src=""
                      data-bind="attr:{data-src: 'https://towerfiles.oss.aliyuncs.com/avatar/' + $root.user.avatar},
-                                visible: task.running" >
+                                visible: task.running()" >
                 <span class="label label-danger" data-bind="visible: task.emergency">high</span>
                 <span class="label label-primary" data-bind="visible: task.due, text: task.due"></span>
                 <span data-bind="html: task.title"></span>
                 <div class="btn-group btn-group-xs edit-bar" style="float:right">
-                    <button type="button" class="btn btn-default" data-bind="click: $parent.toggleTask"><span class="glyphicon glyphicon-play"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.toggleTask">
+                        <span class="glyphicon" data-bind="css: { glyphicon-pause: task.running(), glyphicon-play: !task.running() }"></span>
+                    </button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.editTask"><span class="glyphicon glyphicon-pencil"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.deleteTask"><span class="glyphicon glyphicon-trash"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.openTaskUrl"><span class="glyphicon glyphicon-share-alt"></span></button>
@@ -27,7 +29,11 @@
         </li>
     </ul>
 
-
+    <div class="btn-group tower-toolbar" role="toolbar">
+        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-user"></span></button>
+        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-tasks"></span></button>
+        <button type="button" class="btn btn-default" data-bind="click: $root.refresh"><span class="glyphicon glyphicon-refresh"></span></button>
+    </div>
 
 
 

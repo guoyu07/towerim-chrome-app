@@ -3,7 +3,7 @@ $(document).ready(function () {
 var Task = function(data) {
     this.title = data.content;
     this.emergency = !_.isEmpty(data["priority_marks"]);
-    this.running = data.status == "1";
+    this.running = ko.observable(data.status == "1");
     this.guid = data.guid;
     this.project = data.project;
     this.completed = ko.observable(false);
@@ -13,18 +13,43 @@ var Task = function(data) {
     }
 }
 
+function updateTask(task, attr, status, token) {
+    var data = {};
+    data[attr] = status ? 0 : 1;
+    $.ajax({
+        "url": "https://tower.im/api/v2/todos/" + task.guid + "/?token=" + token,
+        "method": "PUT",
+        "data": data,
+        "success": function(res) {
+            if (res.success) {
+                task[attr](!status);
+            }
+        }
+    });
+}
+
+function loadRemoteImage() {
+    $("img[data-bind]").each(function() {
+        var remoteImg = new RAL.RemoteImage({element: this, width: 20, height: 20});
+        RAL.Queue.add(remoteImg);
+    });
+    RAL.Queue.setMaxConnections(4);
+    RAL.Queue.start();
+}
+
 chrome.storage.sync.get("user", function(data) {
     var user = data.user, token = user["access_token"];
-    $.get("https://tower.im/api/v2/members/7c93bc8f591045f3b60eb8c9b073d9da/todos", {"token":token}, function(data) {
+    function refreshTasks(callback) {
+        $.get("https://tower.im/api/v2/members/7c93bc8f591045f3b60eb8c9b073d9da/todos", {"token":token}, callback);
+    }
+
+    refreshTasks(function(data) {
         console.log(data);
         var viewModel = {
             user: user,
             tasks: ko.observableArray(_.map(data, function(task) { return new Task(task); })),
             toggleTask: function() {
-                var status = this.running ? "pause" : "running";
-                $.post("https://tower.im/api/v2/todos/" + this.guid + "/" + status, function(data) {
-                    console.log(data)
-                })
+                updateTask(this, "running", this.running(), token);
                 console.log(this);
             },
             editTask: function() {
@@ -34,32 +59,26 @@ chrome.storage.sync.get("user", function(data) {
                 console.log(this);
             },
             finishTask: function() {
-                (function(task, completed) {
-                    $.ajax({
-                        "url": "https://tower.im/api/v2/todos/" + task.guid + "/?token=" + token,
-                        "method": "PUT",
-                        "data": { "completed": completed ? 0 : 1 },
-                        "success": function(res) {
-                            if (res.success) task.completed(!completed);
-                        }
-                    })
-                })(this, this.completed());
+                updateTask(this, "completed", this.completed(), token);
             },
             openTaskUrl: function() {
                 openUrl("https://tower.im/projects/" + this.project.guid + "/todos/" + this.guid + "/");
+            },
+            refresh: function() {
+                var tasks = this.tasks;
+                refreshTasks(function(data) {
+                    tasks.removeAll();
+                    _.each(data, function(task) {
+                        tasks.push(new Task(task));
+                    });
+                    loadRemoteImage()
+                });
             }
         };
         console.log(viewModel);
         ko.bindingProvider.instance = new ko.secureBindingsProvider({ attribute: "data-bind" });
         ko.applyBindings(viewModel);
-
-        // load xhr img
-        $("img[data-bind]").each(function() {
-            var remoteImg = new RAL.RemoteImage({element: this});
-            RAL.Queue.add(remoteImg);
-        });
-        RAL.Queue.setMaxConnections(4);
-        RAL.Queue.start();
+        loadRemoteImage();
     });
 
     $(document).on("mouseenter", '.list-group-item', function () {
@@ -69,8 +88,6 @@ chrome.storage.sync.get("user", function(data) {
         $(".edit-bar", this).css("display", "none");
     });
 
-
-    //$("body").html(_.template($("#list").html(), user));
 });
 
 });
