@@ -1,9 +1,10 @@
 $(document).ready(function () {
 
-var Task = function(data) {
+var Task = function(data, localTasks) {
     this.title = data["content_without_gtd_marks"];
     this.emergency = !_.isEmpty(data["priority_marks"]);
     this.running = ko.observable(data.status == "1");
+
     this.guid = data.guid;
     this.project = data.project;
     this.completed = ko.observable(false);
@@ -11,9 +12,15 @@ var Task = function(data) {
     this.newComment = ko.observable("");
     this.comments = ko.observableArray([]);
     this.commentSubmitting = ko.observable(false);
+
+    var local = localTasks[this.guid] || {};
+    this.usedSeconds = local.usedSeconds || 0;
+    this.timerText = ko.observable("");
+    this._timerId = null;
     if (data["due_at"]) {
         this.due = calcDateDistance(new Date(data["due_at"]));
     }
+    syncTaskTimeRecorder(this);
 }
 
 function toggleTaskStatus(task, attr, token, showStatus) {
@@ -27,12 +34,42 @@ function toggleTaskStatus(task, attr, token, showStatus) {
             if (res.success) {
                 task[attr](!status);
                 if (showStatus) showStatusText(true, "edit task successfully");
+                if (attr == "running") {
+                    syncTaskTimeRecorder(task);
+                }
             }
         },
         error: function() {
             showStatusText(false, "edit task failed");
         }
     });
+}
+
+function syncTaskTimeRecorder(task) {
+    function saveUsedTime(task) {
+        chrome.storage.sync.get("tasks", function(data) {
+            var localTasks = data.tasks || {};
+            localTasks[task.guid] = localTasks[task.guid] || {};
+            localTasks[task.guid].usedSeconds = task.usedSeconds;
+            chrome.storage.sync.set({"tasks": localTasks});
+        });
+    }
+
+    clearInterval(task._timerId);
+    delete task._timerId;
+    if (!task.running()) {
+        saveUsedTime(task);
+    } else {
+        var counter = 0;
+        task._timerId = setInterval(function() {
+            task.usedSeconds ++;
+            task.timerText(secondsToTimeInterval(task.usedSeconds));
+            counter ++;
+            if (counter % 30 == 0) {
+                saveUsedTime(task);
+            }
+        }, 1000);
+    }
 }
 
 function loadRemoteImage() {
@@ -74,8 +111,8 @@ ko.bindingHandlers.visible = {
     }
 };
 
-chrome.storage.sync.get("user", function(data) {
-    var user = data.user, token = user["access_token"];
+chrome.storage.sync.get(null, function(data) {
+    var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
     function refreshTasks(callback) {
         $.ajax(
             "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos", {
@@ -92,10 +129,9 @@ chrome.storage.sync.get("user", function(data) {
     }
 
     refreshTasks(function(data) {
-        console.log(data);
         var viewModel = {
             user: user,
-            tasks: ko.observableArray(_.map(data, function(task) { return new Task(task); })),
+            tasks: ko.observableArray(_.map(data, function(task) { return new Task(task, localTasks); })),
             toggleTask: function() {
                 toggleTaskStatus(this, "running", token);
                 // 开始一个任务 需要暂停其他开始的任务
@@ -172,9 +208,12 @@ chrome.storage.sync.get("user", function(data) {
             refresh: function() {
                 var tasks = this.tasks;
                 refreshTasks(function(data) {
+                    _.each(tasks(), function(task) {
+                        clearInterval(task._timerId);
+                    });
                     tasks.removeAll();
                     _.each(data, function(task) {
-                        tasks.push(new Task(task));
+                        tasks.push(new Task(task, localTasks));
                     });
                     loadRemoteImage();
                 });

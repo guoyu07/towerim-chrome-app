@@ -57,3 +57,19 @@ function calcDateDistance(from, to) {
         else return d + "天前";
     }
 }
+
+function secondsToTimeInterval(seconds) {
+    var text = "";
+    if (seconds >= 3600) {
+        text += Math.floor(seconds / 3600) + "h";
+        seconds = seconds % 3600;
+    }
+    if (seconds >= 60) {
+        text += " " + Math.floor(seconds / 60) + "m";
+        seconds = seconds % 60;
+    }
+    if (seconds > 0) {
+        text += " " + seconds + "s";
+    }
+    return text;
+}

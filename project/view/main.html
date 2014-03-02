@@ -16,6 +16,7 @@
                 <span class="label label-danger" data-bind="visible: task.emergency">high</span>
                 <span class="label label-primary" data-bind="visible: task.due, text: task.due"></span>
                 <span data-bind="html: task.title"></span>
+                <span class="badge timer" data-bind="text: task.timerText(), visible: !!task.timerText()"></span>
 
                 <!-- 任务评论 -->
                 <div id="task-detail" data-bind="visible: task.showComments()">
@@ -39,7 +40,9 @@
                     </button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.editTask"><span class="glyphicon glyphicon-pencil"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.deleteTask"><span class="glyphicon glyphicon-trash"></span></button>
-                    <button type="button" class="btn btn-default" data-bind="click: $parent.toggleComments"><span class="glyphicon glyphicon-comment"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.toggleComments">
+                        <span class="glyphicon glyphicon-comment" data-bind="css: { icon-active: task.showComments() }"></span>
+                    </button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.openTaskUrl"><span class="glyphicon glyphicon-share-alt"></span></button>
                     <button type="button" class="btn btn-default" data-bind="click: $parent.finishTask"><span class="glyphicon glyphicon-ok"></span></button>
                 </div>
