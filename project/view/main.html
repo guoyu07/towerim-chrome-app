@@ -50,12 +50,14 @@
         </li>
     </ul>
 
+    <!-- 状态Tip -->
     <div id="statusbar" class="alert alert-success statusbar">
     </div>
 
+    <!-- 底部工具栏 -->
     <div class="btn-group tower-toolbar" role="toolbar">
-        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-user"></span></button>
-        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-tasks"></span></button>
+        <button type="button" class="btn btn-default" data-bind="click: $root.openHome"><span class="glyphicon glyphicon-user"></span></button>
+        <button type="button" class="btn btn-default" data-bind="click: $root.openProject"><span class="glyphicon glyphicon-tasks"></span></button>
         <button type="button" class="btn btn-default" data-bind="click: $root.refresh"><span class="glyphicon glyphicon-refresh"></span></button>
     </div>
 

@@ -221,6 +221,12 @@ chrome.storage.sync.get(null, function(data) {
                 task.commentSubmitting(true);
                 viewModel._submitComment(task, task.newComment(), true);
             },
+            openProject: function() {
+                openUrl("https://tower.im/teams/" + user.teams[0].team_guid + "/");
+            },
+            openHome: function() {
+                openUrl("https://tower.im/members/" + user.teams[0].member_guid + "/?me=1");
+            },
             refresh: function() {
                 var tasks = this.tasks;
                 refreshTasks(function(data) {

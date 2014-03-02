@@ -20,7 +20,7 @@ function openUrl(url, callback) {
             'id': webviewWindowId,
             'type': 'shell',
             'bounds': {
-                'width': 1024,
+                'width': 1082,
                 'height': 800
             }
         }, function(createdWindow) {
