@@ -115,6 +115,7 @@ ko.bindingHandlers.visible = {
 };
 
 chrome.storage.sync.get(null, function(data) {
+    console.log("[init] get storage finish", new Date());
     var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
     function refreshTasks(callback) {
         var url = "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos";
@@ -126,14 +127,17 @@ chrome.storage.sync.get(null, function(data) {
                 showStatusText(true, "refresh task list successfully");
             },
             error: function() {
+                callback(null);
                 showStatusText(false, "refresh task list failed");
             }
         });
     }
 
     refreshTasks(function(data) {
+        console.log("[init] fetch task list finish", new Date());
         var viewModel = {
             user: user,
+            loading: ko.observable(false),
             tasks: ko.observableArray(_.map(data, function(task) { return new Task(task, localTasks); })),
             toggleTask: function() {
                 toggleTaskStatus(this, "running", token);
@@ -229,7 +233,10 @@ chrome.storage.sync.get(null, function(data) {
             },
             refresh: function() {
                 var tasks = this.tasks;
+                viewModel.loading(true);
                 refreshTasks(function(data) {
+                    viewModel.loading(false);
+                    if (!data) return;
                     _.each(tasks(), function(task) {
                         clearInterval(task._timerId);
                     });
@@ -244,6 +251,7 @@ chrome.storage.sync.get(null, function(data) {
         console.log(viewModel);
         ko.bindingProvider.instance = new ko.secureBindingsProvider({ attribute: "data-bind" });
         ko.applyBindings(viewModel);
+        console.log("[init] view model binding finish", new Date());
         loadRemoteImage();
     });
 

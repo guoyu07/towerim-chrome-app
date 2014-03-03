@@ -7,6 +7,7 @@
   </head>
   <body>
 
+    <img id="loading" src="/img/loading.gif" data-bind="visible: loading() "/>
     <ul class="list-group" data-bind="foreach: { data: tasks, as: 'task' }">
         <li class="list-group-item task" data-bind="css: { list-group-item-success: task.completed() }">
             <div>
