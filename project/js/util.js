@@ -1,6 +1,7 @@
 function openView(view, callback) {
     chrome.app.window.create("/view/" + view + ".html", {
-        'type': 'shell',
+        'id': "towerim-ex-window-" + view,
+        'type': 'panel',
         'bounds': {
             'width': 400,
             'height': 500

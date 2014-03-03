@@ -6,6 +6,7 @@ var Task = function(data, localTasks) {
     this.running = ko.observable(data.status == "1");
 
     this.guid = data.guid;
+    this.url = "https://tower.im/projects/" + data.project.guid + "/todos/" + data.guid + "/";
     this.project = data.project;
     this.completed = ko.observable(false);
     this.showComments = ko.observable(false);
@@ -76,7 +77,7 @@ function syncTaskTimeRecorder(task) {
 }
 
 function loadRemoteImage() {
-    $("img[data-bind]").each(function() {
+    $("img[data-src]").each(function() {
         var remoteImg = new RAL.RemoteImage({element: this, width: 24, height: 24});
         RAL.Queue.add(remoteImg);
     });
@@ -115,7 +116,7 @@ ko.bindingHandlers.visible = {
 };
 
 chrome.storage.sync.get(null, function(data) {
-    console.log("[init] get storage finish", new Date());
+    console.log("[init] get storage finish", new Date(), data);
     var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
     function refreshTasks(callback) {
         var url = "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos";
@@ -133,20 +134,37 @@ chrome.storage.sync.get(null, function(data) {
         });
     }
 
+    function dataToProjects(data, localTasks) {
+        var projects = _.groupBy(data, function(task) { return task.project.name; });
+        return _.map(projects, function(project, name) {
+            return {
+                "name": name,
+                "guid": project[0].project.guid,
+                "url": "https://tower.im/projects/" + project[0].project.guid + "/",
+                "tasks": ko.observableArray(_.map(project, function(task) { return new Task(task, localTasks) }))
+            };
+        });
+    }
+
     refreshTasks(function(data) {
-        console.log("[init] fetch task list finish", new Date());
+        console.log("[init] fetch task list finish", new Date(), data);
         var viewModel = {
             user: user,
             loading: ko.observable(false),
-            tasks: ko.observableArray(_.map(data, function(task) { return new Task(task, localTasks); })),
+            projectUrl: "https://tower.im/teams/" + user.teams[0].team_guid + "/",
+            homeUrl: "https://tower.im/members/" + user.teams[0].member_guid + "/?me=1",
+            projects: ko.observableArray(dataToProjects(data, localTasks)),
             toggleTask: function() {
-                toggleTaskStatus(this, "running", token);
+                toggleTaskStatus(this, "running", token, true);
                 // 开始一个任务 需要暂停其他开始的任务
                 if (this.running()) return;
-                _.each(viewModel.tasks(), function(otherTask) {
-                    if (otherTask != this && otherTask.running()) {
-                        toggleTaskStatus(otherTask, "running", token, false);
-                    }
+                var task = this;
+                _.each(viewModel.projects(), function(project) {
+                    _.each(project.tasks(), function(otherTask) {
+                        if (otherTask != task && otherTask.running()) {
+                            toggleTaskStatus(otherTask, "running", token, false);
+                        }
+                    });
                 });
             },
             editTask: function() {
@@ -173,9 +191,6 @@ chrome.storage.sync.get(null, function(data) {
                         syncTaskTimeRecorder(task);
                     }
                 });
-            },
-            openTaskUrl: function() {
-                openUrl("https://tower.im/projects/" + this.project.guid + "/todos/" + this.guid + "/");
             },
             _refreshComment: function(task) {
                 $.ajax({
@@ -225,24 +240,21 @@ chrome.storage.sync.get(null, function(data) {
                 task.commentSubmitting(true);
                 viewModel._submitComment(task, task.newComment(), true);
             },
-            openProject: function() {
-                openUrl("https://tower.im/teams/" + user.teams[0].team_guid + "/");
-            },
-            openHome: function() {
-                openUrl("https://tower.im/members/" + user.teams[0].member_guid + "/?me=1");
-            },
             refresh: function() {
-                var tasks = this.tasks;
+                var projects = this.projects;
                 viewModel.loading(true);
                 refreshTasks(function(data) {
                     viewModel.loading(false);
                     if (!data) return;
-                    _.each(tasks(), function(task) {
-                        clearInterval(task._timerId);
+                    _.each(projects, function(project) {
+                        _.each(project.tasks(), function(task) {
+                            clearInterval(task._timerId);
+                        });
+                        project.tasks.removeAll();
                     });
-                    tasks.removeAll();
-                    _.each(data, function(task) {
-                        tasks.push(new Task(task, localTasks));
+                    projects.removeAll();
+                    _.each(dataToProjects(data, localTasks), function(project) {
+                        projects.push(project);
                     });
                     loadRemoteImage();
                 });

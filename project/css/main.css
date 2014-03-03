@@ -4,6 +4,14 @@ html, body {
     overflow-y: auto;
 }
 
+body {
+    padding-bottom: 30px;
+}
+
+.list-group {
+    margin-bottom: 0;
+}
+
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -34,7 +42,7 @@ html, body {
     background-color: rgba(0,0,0,0.5);
 }
 
-button .glyphicon {
+.btn > .glyphicon {
     top: 2px;
 }
 
@@ -119,4 +127,12 @@ button .glyphicon {
     top: 50%;
     margin-top: -200px;
     margin-left: -275px;
+}
+
+.proj-title {
+    margin-top: 0;
+    margin-bottom: -5px;
+    padding: 5px 10px 10px 10px;
+    background-color: #DDD;
+    font-size: 20px;
 }
