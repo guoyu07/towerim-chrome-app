@@ -117,18 +117,18 @@ ko.bindingHandlers.visible = {
 chrome.storage.sync.get(null, function(data) {
     var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
     function refreshTasks(callback) {
-        $.ajax(
-            "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos", {
-                data: { "token": token },
-                success: function(data) {
-                    callback(data);
-                    showStatusText(true, "refresh task list successfully");
-                },
-                error: function() {
-                    showStatusText(false, "refresh task list failed");
-                }
+        var url = "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos";
+        $.ajax({
+            url: url,
+            data: { "token": token },
+            success: function(data) {
+                callback(data);
+                showStatusText(true, "refresh task list successfully");
+            },
+            error: function() {
+                showStatusText(false, "refresh task list failed");
             }
-        );
+        });
     }
 
     refreshTasks(function(data) {

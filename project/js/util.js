@@ -9,26 +9,39 @@ function openView(view, callback) {
 }
 
 var webviewWindowId = "towerim-ex-webview-window";
-function openUrl(url, callback) {
+function openUrl(url, callback, isHide) {
     console.log("open url: " + url);
+    function createWebview(url, callback, isHide) {
+        chrome.app.window.create("/view/webview.html?url=" + encodeURIComponent(url), {
+            'id': "towerim-ex-webview-window-" + Math.random(),
+            'type': 'shell',
+            'hidden': !!isHide,
+            'bounds': {
+                'width': 1100,
+                'height': 800
+            }
+        }, callback);
+    }
+
+    function onWebviewClosed() {
+        createWebview(url, function(createdWindow) {
+            webviewWindowId = createdWindow.id;
+            createdWindow.onClosed.addListener(onWebviewClosed);
+        }, true);
+    }
+
     var win = chrome.app.window.get(webviewWindowId)
     if (win) {
         win.contentWindow.changeUrl(url);
         win.show();
     } else {
-        chrome.app.window.create("/view/webview.html?url=" + encodeURIComponent(url), {
-            'id': webviewWindowId,
-            'type': 'shell',
-            'bounds': {
-                'width': 1082,
-                'height': 800
-            }
-        }, function(createdWindow) {
+        createWebview(url,  function(createdWindow) {
             webviewWindowId = createdWindow.id;
+            createdWindow.onClosed.addListener(onWebviewClosed);
             if (_.isFunction(callback)) {
                 callback(createdWindow);
             }
-        });
+        }, !!isHide);
     }
 }
 
