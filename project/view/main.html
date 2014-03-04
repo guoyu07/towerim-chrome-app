@@ -3,6 +3,7 @@
   <head>
       <meta charset="UTF-8" />
       <link href="/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+      <link href="/lib/bootstrap/css/datepicker3.css" rel="stylesheet">
       <link href="/css/main.css" rel="stylesheet">
   </head>
   <body>
@@ -14,8 +15,40 @@
 
     <div data-bind="foreach: { data: projects, as: 'project' }">
     <!-- 项目标题 + 链接 -->
-    <div><a target="_blank" data-bind="attr: { href: project.url }">
-        <h2 class="proj-title" data-bind="text: project.name"></h2></a>
+    <div class="proj-info">
+        <a target="_blank" data-bind="attr: { href: project.url }">
+            <h2 class="proj-title" data-bind="text: project.name"></h2>
+        </a>
+        <!-- 新任务按钮 -->
+        <div class="btn-group btn-group-xs project-toolbar">
+            <button type="button" class="btn btn-default" data-bind="click: $root.toggleCreateTask">
+                <span class="glyphicon glyphicon-plus" data-bind="css: { icon-active: project.showCreateTask() }"></span>
+            </button>
+        </div>
+        <!-- 新任务编辑框 -->
+        <div class="create-task" data-bind="visible: project.showCreateTask()">
+            <div class="input-group input-group-sm comment-input">
+                <div class="input-group-btn">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        <span data-bind="text: project.selectedTodolistName"></span>
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" data-bind="foreach: { data: project.todolists, as: todolist }">
+                        <li><a href="#" data-bind="text: $data.name, click: $parent.selectTodolist"></a></li>
+                    </ul>
+                </div>
+                <span class="input-group-addon task-date-picker" data-bind="datepicker: project.newTaskDate">
+                    <i class="glyphicon glyphicon-calendar"></i>
+                    <span data-bind="text: project.newTaskDate"></span>
+                </span>
+                <input type="text" class="form-control" placeholder="new task here"
+                       data-bind="value: project.newTask, valueUpdate: 'input'">
+            <span class="input-group-btn">
+                <button class="btn btn-default" type="button"
+                        data-bind="click: $root.createTask, enable: !project.taskCreating()">Create</button>
+            </span>
+            </div>
+        </div>
     </div>
     <!-- 项目任务列表 -->
     <ul class="list-group" data-bind="foreach: { data: project.tasks, as: 'task' }">
@@ -79,6 +112,7 @@
     <script src="/lib/jquery.js"></script>
     <script src="/lib/underscore.js"></script>
     <script src="/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/lib/bootstrap/js/bootstrap-datepicker.js"></script>
     <script src="/lib/knockout.js"></script>
     <script src="/lib/knockout-secure-binding.js"></script>
     <script src="/lib/app-resource-loader.js"></script>

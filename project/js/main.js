@@ -76,13 +76,14 @@ function syncTaskTimeRecorder(task) {
     }
 }
 
-function loadRemoteImage() {
+function initUI() {
     $("img[data-src]").each(function() {
         var remoteImg = new RAL.RemoteImage({element: this, width: 24, height: 24});
         RAL.Queue.add(remoteImg);
     });
     RAL.Queue.setMaxConnections(4);
     RAL.Queue.start();
+
 }
 
 function showStatusText(status, text) {
@@ -115,6 +116,42 @@ ko.bindingHandlers.visible = {
     }
 };
 
+ko.bindingHandlers.datepicker = {
+    init: function(element, valueAccessor, allBindingsAccessor) {
+        //initialize datepicker with some optional options
+        var options = allBindingsAccessor().datepickerOptions || {
+            format: 'yyyy-mm-dd',
+            startDate: new Date(),
+            autoclose: true,
+            todayHighlight: true,
+            todayBtn: "linked"
+        };
+        $(element).datepicker(options);
+
+        //when a user changes the date, update the view model
+        ko.utils.registerEventHandler(element, "changeDate", function(event) {
+            var value = valueAccessor();
+            if (ko.isObservable(value)) {
+                value(formatDate(event.date, "yyyy-MM-dd"));
+            }
+        });
+    },
+    update: function(element, valueAccessor)   {
+        var widget = $(element).data("datepicker");
+        //when the view model is updated, update the widget
+        if (widget) {
+            widget.date = ko.utils.unwrapObservable(valueAccessor());
+            if (!widget.date) {
+                return;
+            }
+            if (isString(widget.date)) {
+                widget.date = new Date(widget.date);
+            }
+            widget.setValue();
+        }
+    }
+};
+
 chrome.storage.sync.get(null, function(data) {
     console.log("[init] get storage finish", new Date(), data);
     var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
@@ -136,13 +173,25 @@ chrome.storage.sync.get(null, function(data) {
 
     function dataToProjects(data, localTasks) {
         var projects = _.groupBy(data, function(task) { return task.project.name; });
-        return _.map(projects, function(project, name) {
-            return {
-                "name": name,
-                "guid": project[0].project.guid,
-                "url": "https://tower.im/projects/" + project[0].project.guid + "/",
-                "tasks": ko.observableArray(_.map(project, function(task) { return new Task(task, localTasks) }))
+        return _.map(projects, function(data, name) {
+            var project = new function() {
+                this.name = name;
+                this.guid = data[0].project.guid;
+                this.newTask = ko.observable("");
+                this.newTaskDate = ko.observable("无限期");
+                this.selectedTodolist = null;
+                this.selectedTodolistName = ko.observable("todolist ");
+                this.todolists = ko.observableArray([]);
+                this.showCreateTask = ko.observable(false);
+                this.taskCreating = ko.observable(false);
+                this.url = "https://tower.im/projects/" + data[0].project.guid + "/";
+                this.tasks = ko.observableArray(_.map(data, function(task) { return new Task(task, localTasks) })),
+                this.selectTodolist = function(todolist) {
+                    project.selectedTodolist = todolist;
+                    project.selectedTodolistName(todolist.name + " ");
+                }
             };
+            return project;
         });
     }
 
@@ -154,6 +203,56 @@ chrome.storage.sync.get(null, function(data) {
             projectUrl: "https://tower.im/teams/" + user.teams[0].team_guid + "/",
             homeUrl: "https://tower.im/members/" + user.teams[0].member_guid + "/?me=1",
             projects: ko.observableArray(dataToProjects(data, localTasks)),
+            toggleCreateTask: function(project) {
+                project.showCreateTask(!project.showCreateTask());
+                if (project.showCreateTask()) {
+                    $.ajax({
+                        url: "https://tower.im/api/v2/projects/" + project.guid + "/todolists/",
+                        "type": "GET",
+                        "data": { "token": token },
+                        "success": function(data) {
+                            project.todolists.removeAll();
+                            _.each(data, function(todolist) {
+                                project.todolists.push(todolist);
+                            });
+                        }, "error": function() {
+                            showStatusText(false, "query project todolists failed");
+                        }
+                    });
+                }
+            },
+            createTask: function(project) {
+                if (!project.newTask()) {
+                    showStatusText(false, "empty task title");
+                    return;
+                }
+                if (!project.selectedTodolist) {
+                    showStatusText(false, "no todolist selected");
+                    return;
+                }
+                project.taskCreating(true);
+                var data = { "token": token, "content": project.newTask() };
+                var due = new Date(project.newTaskDate());
+                if (due != "Invalid Date") {
+                    data["due_at"] = due.getTime();
+                }
+                $.ajax({
+                    "url": "https://tower.im/api/v2/todolists/" + project.selectedTodolist.guid + "/todos/",
+                    "type": "POST",
+                    "data": data,
+                    "success": function() {
+                        showStatusText(true, "create task successfully");
+                        project.newTask("");
+                        project.taskCreating(false);
+                        viewModel.refresh();
+                    },
+                    "error": function() {
+                        project.taskCreating(false);
+                        task.commentSubmitting(false);
+                        showStatusText(false, "create task failed");
+                    }
+                });
+            },
             toggleTask: function() {
                 toggleTaskStatus(this, "running", token, true);
                 // 开始一个任务 需要暂停其他开始的任务
@@ -256,7 +355,7 @@ chrome.storage.sync.get(null, function(data) {
                     _.each(dataToProjects(data, localTasks), function(project) {
                         projects.push(project);
                     });
-                    loadRemoteImage();
+                    initUI();
                 });
             }
         };
@@ -264,7 +363,7 @@ chrome.storage.sync.get(null, function(data) {
         ko.bindingProvider.instance = new ko.secureBindingsProvider({ attribute: "data-bind" });
         ko.applyBindings(viewModel);
         console.log("[init] view model binding finish", new Date());
-        loadRemoteImage();
+        initUI();
     });
 
     $(document).on("mouseenter", '.list-group-item', function () {

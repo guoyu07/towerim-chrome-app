@@ -129,10 +129,27 @@ body {
     margin-left: -275px;
 }
 
-.proj-title {
+.proj-info {
     margin-top: 0;
     margin-bottom: -5px;
     padding: 5px 10px 10px 10px;
     background-color: #DDD;
+}
+
+.proj-title {
+    display: inline;
+    margin: 0;
+    padding: 0;
     font-size: 20px;
+}
+
+.project-toolbar {
+    float: right;
+    height: 30px;
+    top: 1px;
+    right: 0px;
+}
+
+.task-date-picker {
+    width: 100px !important;
 }
