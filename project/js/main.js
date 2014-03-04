@@ -231,7 +231,12 @@ chrome.storage.sync.get(null, function(data) {
                     return;
                 }
                 project.taskCreating(true);
-                var data = { "token": token, "content": project.newTask() };
+                var data = {
+                    "token": token,
+                    "content": project.newTask(),
+                    "assignee_guid": viewModel.user.teams[0].member_guid
+                };
+                console.log(data);
                 var due = new Date(project.newTaskDate());
                 if (due != "Invalid Date") {
                     data["due_at"] = due.getTime();
