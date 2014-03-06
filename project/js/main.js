@@ -92,7 +92,13 @@ function showStatusText(status, text) {
     $("#statusbar").stop(false, true).addClass(className).text(text).fadeIn().delay(2500).fadeOut();
 }
 
+function reloadCSS(theme) {
+    $("link").remove();
+    loadCSS("/lib/bootstrap/css/" + theme.url);
+    loadCSS("/css/main.css");
+}
 
+// animate visible
 ko.bindingHandlers.visible = {
     init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
         var value = ko.utils.unwrapObservable(valueAccessor());
@@ -107,7 +113,7 @@ ko.bindingHandlers.visible = {
         var $element = $(element);
         var allBindings = allBindingsAccessor();
         // Grab data from binding property
-        var duration = allBindings.duration || 250;
+        var duration = 200;
         var isCurrentlyVisible = !(element.style.display == "none");
         if (value && !isCurrentlyVisible)
             $element.show(duration);
@@ -116,6 +122,7 @@ ko.bindingHandlers.visible = {
     }
 };
 
+// two way bind datepicker to date
 ko.bindingHandlers.datepicker = {
     init: function(element, valueAccessor, allBindingsAccessor) {
         //initialize datepicker with some optional options
@@ -155,6 +162,9 @@ ko.bindingHandlers.datepicker = {
 chrome.storage.sync.get(null, function(data) {
     console.log("[init] get storage finish", new Date(), data);
     var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
+    var theme = data.theme || { name: "default", url: "bootstrap.min.css" };
+    reloadCSS(theme);
+
     function refreshTasks(callback) {
         var url = "https://tower.im/api/v2/members/" + user.teams[0].member_guid + "/todos";
         $.ajax({
@@ -199,6 +209,19 @@ chrome.storage.sync.get(null, function(data) {
         console.log("[init] fetch task list finish", new Date(), data);
         var viewModel = {
             user: user,
+            theme: theme,
+            themes: [
+                { name: "default", url: "bootstrap.min.css" },
+                { name: "green",   url: "bootstrap-green.min.css" },
+                { name: "dark1",   url: "bootstrap-dark.min.css" },
+                { name: "dark2",   url: "bootstrap-dark1.min.css" },
+                { name: "simple",  url: "bootstrap-simple.min.css" }
+            ],
+            changeTheme: function(theme) {
+                reloadCSS(theme);
+                redraw($("body"));
+                chrome.storage.sync.set({"theme": theme});
+            },
             loading: ko.observable(false),
             projectUrl: "https://tower.im/teams/" + user.teams[0].team_guid + "/",
             homeUrl: "https://tower.im/members/" + user.teams[0].member_guid + "/?me=1",
@@ -207,7 +230,7 @@ chrome.storage.sync.get(null, function(data) {
                 project.showCreateTask(!project.showCreateTask());
                 if (project.showCreateTask()) {
                     $.ajax({
-                        url: "https://tower.im/api/v2/projects/" + project.guid + "/todolists/",
+                        "url": "https://tower.im/api/v2/projects/" + project.guid + "/todolists/",
                         "type": "GET",
                         "data": { "token": token },
                         "success": function(data) {

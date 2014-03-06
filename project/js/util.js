@@ -5,45 +5,9 @@ function openView(view, callback) {
         'bounds': {
             'width': 400,
             'height': 500
-        }
+        },
+        "frame": "none"
     }, callback);
-}
-
-var webviewWindowId = "towerim-ex-webview-window";
-function openUrl(url, callback, isHide) {
-    console.log("open url: " + url);
-    function createWebview(url, callback, isHide) {
-        chrome.app.window.create("/view/webview.html?url=" + encodeURIComponent(url), {
-            'id': "towerim-ex-webview-window-" + Math.random(),
-            'type': 'shell',
-            'hidden': !!isHide,
-            'bounds': {
-                'width': 1100,
-                'height': 800
-            }
-        }, callback);
-    }
-
-    function onWebviewClosed() {
-        createWebview(url, function(createdWindow) {
-            webviewWindowId = createdWindow.id;
-            createdWindow.onClosed.addListener(onWebviewClosed);
-        }, true);
-    }
-
-    var win = chrome.app.window.get(webviewWindowId)
-    if (win) {
-        win.contentWindow.changeUrl(url);
-        win.show();
-    } else {
-        createWebview(url,  function(createdWindow) {
-            webviewWindowId = createdWindow.id;
-            createdWindow.onClosed.addListener(onWebviewClosed);
-            if (_.isFunction(callback)) {
-                callback(createdWindow);
-            }
-        }, !!isHide);
-    }
 }
 
 function isString(obj) {
@@ -106,4 +70,27 @@ function formatDate(date, fmt) {
     for (var k in o)
         if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
     return fmt;
+}
+
+function redraw(element) {
+    if (!element) { return; }
+    if (element instanceof jQuery) {
+        element = element[0];
+    }
+    var n = document.createTextNode(' ');
+    var disp = element.style.display;
+    element.appendChild(n);
+    element.style.display = 'none';
+    setTimeout(function(){
+        element.style.display = disp;
+        n.parentNode.removeChild(n);
+    }, 100);
+}
+
+function loadCSS(url) {
+    var link = document.createElement('link');
+    link.setAttribute('rel', 'stylesheet');
+    link.setAttribute('type', 'text/css');
+    link.setAttribute('href', url);
+    document.getElementsByTagName('head')[0].appendChild(link);
 }

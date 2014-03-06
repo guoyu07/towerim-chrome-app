@@ -1,7 +1,7 @@
 {
     "name": "Tower.im",
     "description": "A Tower.im client",
-    "version": "0.2",
+    "version": "0.3",
     "app": {
         "background": {
             "page": "background.html"

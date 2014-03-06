@@ -2,9 +2,10 @@
 <html>
   <head>
       <meta charset="UTF-8" />
-      <link href="/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+      <style>
+          #loading { position: absolute; z-index: 100; left: 50%; top: 50%; margin-top: -200px; margin-left: -275px; }
+      </style>
       <link href="/lib/bootstrap/css/datepicker3.css" rel="stylesheet">
-      <link href="/css/main.css" rel="stylesheet">
   </head>
   <body>
 
@@ -13,9 +14,9 @@
     <!-- ko template: 'main' --><!-- /ko -->
     <script id="main" type="text/html">
 
-    <div data-bind="foreach: { data: projects, as: 'project' }">
+    <div class="panel panel-default" data-bind="foreach: { data: projects, as: 'project' }">
     <!-- 项目标题 + 链接 -->
-    <div class="proj-info">
+    <div class="panel-heading">
         <a target="_blank" data-bind="attr: { href: project.url }">
             <h2 class="proj-title" data-bind="text: project.name"></h2>
         </a>
@@ -52,7 +53,8 @@
     </div>
     <!-- 项目任务列表 -->
     <ul class="list-group" data-bind="foreach: { data: project.tasks, as: 'task' }">
-        <li class="list-group-item task" data-bind="css: { list-group-item-success: task.completed() }">
+        <li class="list-group-item task" data-bind="css: { list-group-item-success: task.completed(),
+                                                           list-group-item-info: task.running() }">
             <div>
                 <img class="avatar" src=""
                      data-bind="attr:{data-src: 'https://towerfiles.oss.aliyuncs.com/avatar/' + $root.user.avatar},
@@ -105,6 +107,16 @@
         <a class="btn btn-default" target="_blank" data-bind="attr: { href: homeUrl }"><span class="glyphicon glyphicon-user"></span></a>
         <a class="btn btn-default" target="_blank" data-bind="attr: { href: projectUrl }"><span class="glyphicon glyphicon-tasks"></span></a>
         <button type="button" class="btn btn-default" data-bind="click: $root.refresh"><span class="glyphicon glyphicon-refresh"></span></button>
+        <div class="btn-group dropup">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                <span class="glyphicon glyphicon-eye-open"></span>
+            </button>
+            <ul class="dropdown-menu pull-right" roll="menu" data-bind="foreach: { data: $root.themes, as: 'theme' }">
+                <li><a href="#" data-bind="text: theme.name, click: $root.changeTheme,
+                                           css: { theme-current : theme.name == $root.theme.name }"></a>
+                </li>
+            </ul>
+        </div>
     </div>
 
     </script>
