@@ -1,4 +1,4 @@
-Tower Climber
+Towerim Chrome App
 =============
 
 A Tower.im Chrome App client.
