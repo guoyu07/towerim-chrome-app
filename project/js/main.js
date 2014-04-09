@@ -51,11 +51,11 @@ function toggleTaskStatus(task, attr, token, showStatus, callback) {
 
 function syncTaskTimeRecorder(task) {
     function saveUsedTime(task) {
-        chrome.storage.sync.get("tasks", function(data) {
+        chrome.storage.local.get("tasks", function(data) {
             var localTasks = data.tasks || {};
             localTasks[task.guid] = localTasks[task.guid] || {};
             localTasks[task.guid].usedSeconds = task.usedSeconds;
-            chrome.storage.sync.set({"tasks": localTasks});
+            chrome.storage.local.set({"tasks": localTasks});
         });
     }
 
@@ -78,12 +78,13 @@ function syncTaskTimeRecorder(task) {
 
 function initUI() {
     $("img[data-src]").each(function() {
+        var url = $(this).attr("data-src");
+        console.log("load image: " + url);
         var remoteImg = new RAL.RemoteImage({element: this, width: 24, height: 24});
         RAL.Queue.add(remoteImg);
     });
-    RAL.Queue.setMaxConnections(4);
+    RAL.Queue.setMaxConnections(100);
     RAL.Queue.start();
-
 }
 
 function showStatusText(status, text) {
@@ -159,10 +160,11 @@ ko.bindingHandlers.datepicker = {
     }
 };
 
-chrome.storage.sync.get(null, function(data) {
+chrome.storage.local.get(null, function(data) {
     console.log("[init] get storage finish", new Date(), data);
     var user = data.user, token = user["access_token"], localTasks = data.tasks || {};
     var theme = data.theme || { name: "default", url: "bootstrap.min.css" };
+    theme.name = ko.observable(theme.name);
     reloadCSS(theme);
 
     function refreshTasks(callback) {
@@ -218,9 +220,11 @@ chrome.storage.sync.get(null, function(data) {
                 { name: "simple",  url: "bootstrap-simple.min.css" }
             ],
             changeTheme: function(theme) {
+                viewModel.theme.name(theme.name);
+                viewModel.theme.url = theme.url;
                 reloadCSS(theme);
                 redraw($("body"));
-                chrome.storage.sync.set({"theme": theme});
+                chrome.storage.local.set({"theme": theme});
             },
             loading: ko.observable(false),
             projectUrl: "https://tower.im/teams/" + user.teams[0].team_guid + "/",
@@ -392,6 +396,13 @@ chrome.storage.sync.get(null, function(data) {
         ko.applyBindings(viewModel);
         console.log("[init] view model binding finish", new Date());
         initUI();
+    });
+
+    $(document).ajaxError(function(event, request, settings) {
+        if (request.status === 401) {
+            openView("login");
+            window.close();
+        }
     });
 
     $(document).on("mouseenter", '.list-group-item', function () {

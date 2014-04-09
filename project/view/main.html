@@ -113,7 +113,7 @@
             </button>
             <ul class="dropdown-menu pull-right" roll="menu" data-bind="foreach: { data: $root.themes, as: 'theme' }">
                 <li><a href="#" data-bind="text: theme.name, click: $root.changeTheme,
-                                           css: { theme-current : theme.name == $root.theme.name }"></a>
+                                           css: { theme-current : theme.name == $root.theme.name() }"></a>
                 </li>
             </ul>
         </div>

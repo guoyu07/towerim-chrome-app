@@ -12,11 +12,7 @@ body {
     margin-bottom: 0;
 }
 
-* {
-   -webkit-app-region: no-drag;
-}
-
-.panel-heading {
+body {
     -webkit-app-region: drag;
 }
 

@@ -24,7 +24,8 @@
                 type: "POST",
                 dataType: "JSON",
                 success: function (data) {
-                    return chrome.storage.sync.set({"user": data}, function () {
+                    data["expires_at"] = new Date(new Date().getTime() + data["expires_in"] * 1000).getTime();
+                    return chrome.storage.local.set({"user": data}, function () {
                         return openView("main", function () {
                             return chrome.app.window.current().close()
                         })
