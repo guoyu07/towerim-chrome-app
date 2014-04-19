@@ -11,6 +11,6 @@
     "permissions": [
         "http://*.tower.im/*", "https://*.tower.im/*",
         "https://towerfiles.oss.aliyuncs.com/*",
-        "app.window", "notifications", "storage", "webview", "fileSystem"
+        "notifications", "storage", "webview", "fileSystem"
     ]
 }
